@@ -129,8 +129,14 @@ func main() {
 
 // processBankFiles reads the bank statements from the given files
 func processBankFiles(bankFileString string) ([]string, error) {
+	// Check if path is a directory
+	fileInfo, err := os.Stat(bankFileString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file info: %w", err)
+	}
+
 	// If the bank file is a directory, read all CSV files in the directory
-	if strings.HasSuffix(bankFileString, "/") {
+	if fileInfo.IsDir() {
 		files, err := filepath.Glob(filepath.Join(bankFileString, "*.csv"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read bank files: %w", err)
