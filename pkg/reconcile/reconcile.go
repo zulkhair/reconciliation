@@ -35,7 +35,7 @@ func Reconcile(system []types.Transaction, bank []types.BankStatement) Reconcile
 				result.TransactionMatched++
 
 				// Add any amount discrepancy to total
-				result.TotalDiscrepancies += floor(abs(sysTx.Amount - abs(bankTx.Amount)))
+				result.TotalDiscrepancies += round(abs(sysTx.Amount - abs(bankTx.Amount)))
 				break
 			}
 		}
@@ -71,7 +71,7 @@ func isMatch(sysTx types.Transaction, bankTx types.BankStatement) bool {
 		return false
 	}
 
-	if floor(abs(sysTx.Amount-abs(bankAmount))) > amountTolerance {
+	if round(abs(sysTx.Amount-abs(bankAmount))) > amountTolerance {
 		return false
 	}
 
@@ -80,8 +80,8 @@ func isMatch(sysTx types.Transaction, bankTx types.BankStatement) bool {
 }
 
 // Assumes the value is only to 2 decimal places
-func floor(value float64) float64 {
-	return math.Floor(value*100) / 100
+func round(value float64) float64 {
+	return math.Round(value*100) / 100
 }
 
 // abs returns the absolute value of a float64

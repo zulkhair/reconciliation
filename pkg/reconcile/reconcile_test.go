@@ -668,7 +668,7 @@ func TestReconcileResult_String(t *testing.T) {
 				"Total matched transactions: 1\n" +
 				"Total unmatched transactions: 2\n" +
 				"\nSystem transactions missing from bank statements:\n" +
-				"- TrxID: TRX1, Amount: 100.00, Date: 2024-03-20 10:30:00\n" +
+				"- TrxID: TRX1, Amount: 100.00, Type: CREDIT, Date: 2024-03-20 10:30:00\n" +
 				"\nBank statements missing from system transactions:\n" +
 				"\nBank: BankA\n" +
 				"- ID: BANK1, Amount: 200.00, Date: 2024-03-20\n" +

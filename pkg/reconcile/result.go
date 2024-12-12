@@ -43,9 +43,10 @@ func (r *ReconcileResult) String() string {
 	if len(r.TransactionUnmatched.SystemUnmatched) > 0 {
 		result.WriteString("\nSystem transactions missing from bank statements:\n")
 		for _, tx := range r.TransactionUnmatched.SystemUnmatched {
-			fmt.Fprintf(&result, "- TrxID: %s, Amount: %.2f, Date: %s\n",
+			fmt.Fprintf(&result, "- TrxID: %s, Amount: %.2f, Type: %s, Date: %s\n",
 				tx.TrxID,
 				tx.Amount,
+				tx.Type,
 				tx.TransactionTime.Format("2006-01-02 15:04:05"))
 		}
 	}

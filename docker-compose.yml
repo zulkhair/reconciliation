@@ -14,5 +14,6 @@ services:
       "--bank", "/app/data/discrepancy/bni.csv",
       "--start", "2024-01-01",
       "--end", "2024-12-31",
-      "--output", "/app/data/result.json"
+      "--output", "/app/data/result.json",
+      "--print", "true"
     ] 
