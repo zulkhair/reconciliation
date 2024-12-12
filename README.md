@@ -4,6 +4,7 @@ Simple Reconciliation App in Go
 
 ## Project Structure
 
+```
 reconciliation/
 ├── cmd/
 │ └── main.go # Main application entry point
@@ -16,9 +17,11 @@ reconciliation/
 ├── go.sum
 ├── README.md
 └── Makefile
+```
 
 ## Usage
 
+```
 Flags:
   -b, --bank string     Directory path contains bank statement CSV files or Comma-separated paths to bank statement CSV files (required)
   -e, --end string      End date for reconciliation in YYYY-MM-DD format (required)
@@ -26,6 +29,7 @@ Flags:
   -o, --output string   Path to output JSON file
   -t, --start string    Start date for reconciliation in YYYY-MM-DD format (required)
   -s, --system string   Path to system transaction CSV file (required)
+```
 
 ### Using go run command
 ```bash
