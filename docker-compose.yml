@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  reconciliation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount the sample data directory
+      - ./sample:/app/data
+    # Command can be overridden via command line when running docker-compose
+    command: [
+      "--system", "/app/data/discrepancy/system.csv",
+      "--bank", "/app/data/discrepancy/bni.csv",
+      "--start", "2024-01-01",
+      "--end", "2024-12-31",
+      "--output", "/app/data/result.json"
+    ] 
