@@ -8,7 +8,9 @@ import (
 // amountTolerance is the amount of discrepancy allowed
 const amountTolerance = 0.01
 
+// Reconcile reconciles the system transactions against the bank statements
 func Reconcile(system []types.Transaction, bank []types.BankStatement) ReconcileResult {
+	// Initialize the result
 	result := ReconcileResult{
 		TransactionUnmatched: ReconcileUnmatched{},
 	}
@@ -17,29 +19,43 @@ func Reconcile(system []types.Transaction, bank []types.BankStatement) Reconcile
 	matchedSystem := make(map[string]bool, len(system))
 	matchedBank := make(map[string]bool, len(bank))
 
+	// Set the total number of transactions processed
 	result.TransactionProcessed = len(system)
 
 	// Compare each system transaction against bank statements
 	for _, sysTx := range system {
 		matched := false
+
+		// Compare each system transaction against bank statements
 		for _, bankTx := range bank {
 			// Skip already matched bank transactions
 			if matchedBank[bankTx.UniqueID] {
 				continue
 			}
 
+			// Check if the system transaction matches the bank transaction
 			if isMatch(sysTx, bankTx) {
+				// Set the matched flag to true
 				matched = true
+
+				// Add the system transaction to the matched map
 				matchedSystem[sysTx.TrxID] = true
+
+				// Add the bank transaction to the matched map
 				matchedBank[bankTx.UniqueID] = true
+
+				// Increment the matched transaction count
 				result.TransactionMatched++
 
 				// Add any amount discrepancy to total
 				result.TotalDiscrepancies += round(abs(sysTx.Amount - abs(bankTx.Amount)))
+
+				// Break out of the loop
 				break
 			}
 		}
 
+		// If no match is found, add the system transaction to the unmatched map
 		if !matched {
 			result.TransactionUnmatched.TransactionUnmatched++
 			result.TransactionUnmatched.SystemUnmatched = append(result.TransactionUnmatched.SystemUnmatched, sysTx)
@@ -48,12 +64,17 @@ func Reconcile(system []types.Transaction, bank []types.BankStatement) Reconcile
 
 	// Collect unmatched bank statements
 	for _, bankTx := range bank {
-		if !matchedBank[bankTx.UniqueID] {
-			result.TransactionUnmatched.TransactionUnmatched++
-			result.TransactionUnmatched.BankUnmatched = append(result.TransactionUnmatched.BankUnmatched, bankTx)
+		// Skip already matched bank transactions
+		if matchedBank[bankTx.UniqueID] {
+			continue
 		}
+
+		// Add the bank transaction to the unmatched map
+		result.TransactionUnmatched.TransactionUnmatched++
+		result.TransactionUnmatched.BankUnmatched = append(result.TransactionUnmatched.BankUnmatched, bankTx)
 	}
 
+	// Return the result
 	return result
 }
 

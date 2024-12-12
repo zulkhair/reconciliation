@@ -11,15 +11,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// CSVReaderTestSuite is a test suite for the CSVReader
 type CSVReaderTestSuite struct {
 	suite.Suite
 }
 
+// TestCSVReaderSuite runs the test suite
 func TestCSVReaderSuite(t *testing.T) {
 	suite.Run(t, new(CSVReaderTestSuite))
 }
 
+// TestReadSystemTransactionsFromCSV tests the ReadSystemTransactionsFromCSV function
 func (s *CSVReaderTestSuite) TestReadSystemTransactionsFromCSV() {
+	// Define test cases
 	testCases := []struct {
 		name          string
 		csvContent    string
@@ -136,9 +140,13 @@ TX001,100.0,DEBIT,2024-01-01 10:00:00`,
 		},
 	}
 
+	// Run each test case
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			// Create a CSV reader with the test case's CSV content
 			reader := csv.NewReader(bytes.NewBufferString(tc.csvContent))
+
+			// Apply options
 			var opts []Option
 			if tc.timeRange != nil {
 				opts = append(opts, WithTimeRange(tc.timeRange.start, tc.timeRange.end))
@@ -148,8 +156,10 @@ TX001,100.0,DEBIT,2024-01-01 10:00:00`,
 			}
 			csvReader := NewCSVReader(reader, opts...)
 
+			// Read the system transactions
 			transactions, err := csvReader.ReadSystemTransactionsFromCSV()
 
+			// Check if there was an error
 			if tc.expectedError != "" {
 				assert.EqualError(s.T(), err, tc.expectedError)
 			} else {
@@ -160,7 +170,9 @@ TX001,100.0,DEBIT,2024-01-01 10:00:00`,
 	}
 }
 
+// TestReadBankStatementsFromCSV tests the ReadBankStatementsFromCSV function
 func (s *CSVReaderTestSuite) TestReadBankStatementsFromCSV() {
+	// Define test cases
 	testCases := []struct {
 		name          string
 		csvContent    string
@@ -279,9 +291,13 @@ BS001,100.0,2024-01-01`,
 		},
 	}
 
+	// Run each test case
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			// Create a CSV reader with the test case's CSV content
 			reader := csv.NewReader(bytes.NewBufferString(tc.csvContent))
+
+			// Apply options
 			var opts []Option
 			if tc.timeRange != nil {
 				opts = append(opts, WithTimeRange(tc.timeRange.start, tc.timeRange.end))
@@ -294,8 +310,10 @@ BS001,100.0,2024-01-01`,
 			}
 			csvReader := NewCSVReader(reader, opts...)
 
+			// Read the bank statements
 			statements, err := csvReader.ReadBankStatementsFromCSV()
 
+			// Check if there was an error
 			if tc.expectedError != "" {
 				assert.EqualError(s.T(), err, tc.expectedError)
 			} else {
@@ -304,18 +322,4 @@ BS001,100.0,2024-01-01`,
 			}
 		})
 	}
-}
-
-func (s *CSVReaderTestSuite) TestWithTimeRangeOption() {
-	reader := csv.NewReader(bytes.NewBufferString(""))
-	start := time.Now()
-	end := start.Add(24 * time.Hour)
-
-	csvReader := NewCSVReader(reader, WithTimeRange(start, end))
-
-	// Type assert to access internal fields
-	impl, ok := interface{}(csvReader).(*CSVReaderImpl)
-	assert.True(s.T(), ok)
-	assert.Equal(s.T(), start, impl.start)
-	assert.Equal(s.T(), end, impl.end)
 }

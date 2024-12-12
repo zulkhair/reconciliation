@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// ReconcileResult is the result of the reconciliation process
 type ReconcileResult struct {
 	// TransactionProcessed is the number of transactions that were processed
 	TransactionProcessed int
@@ -22,6 +23,7 @@ type ReconcileResult struct {
 	TotalDiscrepancies float64
 }
 
+// ReconcileUnmatched is the details of transactions that were not matched
 type ReconcileUnmatched struct {
 	// TransactionUnmatched is the number of transactions that were not matched to a bank statement
 	TransactionUnmatched int
@@ -33,13 +35,24 @@ type ReconcileUnmatched struct {
 	BankUnmatched []types.BankStatement
 }
 
+// String returns a string representation of the reconciliation result
 func (r *ReconcileResult) String() string {
+	// Initialize a new strings.Builder
 	var result strings.Builder
+
+	// Write the summary header
 	result.WriteString("Reconciliation Summary:\n------------------------\n")
+
+	// Write the total transactions processed
 	fmt.Fprintf(&result, "Total transactions processed: %d\n", r.TransactionProcessed)
+
+	// Write the total matched transactions
 	fmt.Fprintf(&result, "Total matched transactions: %d\n", r.TransactionMatched)
+
+	// Write the total unmatched transactions
 	fmt.Fprintf(&result, "Total unmatched transactions: %d\n", r.TransactionUnmatched.TransactionUnmatched)
 
+	// Write the system transactions missing from bank statements
 	if len(r.TransactionUnmatched.SystemUnmatched) > 0 {
 		result.WriteString("\nSystem transactions missing from bank statements:\n")
 		for _, tx := range r.TransactionUnmatched.SystemUnmatched {
@@ -51,14 +64,17 @@ func (r *ReconcileResult) String() string {
 		}
 	}
 
+	// Write the bank statements missing from system transactions
 	if len(r.TransactionUnmatched.BankUnmatched) > 0 {
 		result.WriteString("\nBank statements missing from system transactions:\n")
+
 		// Pre-allocate map with capacity
 		bankGroups := make(map[string][]types.BankStatement, len(r.TransactionUnmatched.BankUnmatched))
 		for _, stmt := range r.TransactionUnmatched.BankUnmatched {
 			bankGroups[stmt.BankName] = append(bankGroups[stmt.BankName], stmt)
 		}
 
+		// Write the bank statements missing from system transactions
 		for bankName, statements := range bankGroups {
 			fmt.Fprintf(&result, "\nBank: %s\n", bankName)
 			for _, stmt := range statements {
@@ -70,7 +86,10 @@ func (r *ReconcileResult) String() string {
 		}
 	}
 
+	// Write the total amount discrepancies
 	fmt.Fprintf(&result, "\nTotal amount discrepancies: %.2f\n", r.TotalDiscrepancies)
+
+	// Return the result as a string
 	return result.String()
 }
 
@@ -96,22 +115,31 @@ func (r *ReconcileResult) GenerateJSON(filename string) error {
 		bankGroups[stmt.BankName] = append(bankGroups[stmt.BankName], stmt)
 	}
 
+	// Initialize the result
 	result := jsonResult{}
+
+	// Set the summary values
 	result.Summary.TotalTransactionsProcessed = r.TransactionProcessed
 	result.Summary.TotalTransactionsMatched = r.TransactionMatched
 	result.Summary.TotalTransactionsUnmatched = r.TransactionUnmatched.TransactionUnmatched
 	result.Summary.TotalDiscrepancies = r.TotalDiscrepancies
+
+	// Set the unmatched details
 	result.UnmatchedDetails.SystemTransactions = r.TransactionUnmatched.SystemUnmatched
 	result.UnmatchedDetails.BankStatements = bankGroups
 
+	// Create the JSON file
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create JSON file: %w", err)
 	}
 	defer file.Close()
 
+	// Set the JSON encoder to use indentation
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
+
+	// Encode the result
 	if err := encoder.Encode(result); err != nil {
 		return fmt.Errorf("failed to encode JSON: %w", err)
 	}

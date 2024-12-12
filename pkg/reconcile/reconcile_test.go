@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// generateTransactions generates a slice of transactions
 func generateTransactions(count int) []types.Transaction {
 	transactions := make([]types.Transaction, count)
 
@@ -27,6 +28,7 @@ func generateTransactions(count int) []types.Transaction {
 	return transactions
 }
 
+// generateBankStatements generates a slice of bank statements
 func generateBankStatements(count int) []types.BankStatement {
 	bankStatements := make([]types.BankStatement, count)
 
@@ -41,6 +43,7 @@ func generateBankStatements(count int) []types.BankStatement {
 	return bankStatements
 }
 
+// TestReconcile tests the Reconcile function
 func TestReconcile(t *testing.T) {
 	// Helper functions to create time.Time from string
 	parseDateTime := func(date string) time.Time {
@@ -56,6 +59,7 @@ func TestReconcile(t *testing.T) {
 	systemTxs := generateTransactions(100)
 	bankTxs := generateBankStatements(100)
 
+	// Define test cases
 	tests := []struct {
 		name           string
 		systemTxs      []types.Transaction
@@ -417,9 +421,13 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Call the Reconcile function
 			result := Reconcile(tt.systemTxs, tt.bankTxs)
+
+			// Check if the result matches the expected result
 			assert.Equal(t, tt.expectedResult.TransactionProcessed, result.TransactionProcessed)
 			assert.Equal(t, tt.expectedResult.TransactionMatched, result.TransactionMatched)
 			assert.InDelta(t, tt.expectedResult.TotalDiscrepancies, result.TotalDiscrepancies, amountTolerance)
@@ -433,17 +441,21 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+// TestIsMatch tests the isMatch function
 func TestIsMatch(t *testing.T) {
+	// Define helper functions to parse date and time
 	parseDateTime := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02 15:04:05", date)
 		return t
 	}
 
+	// Define helper function to parse date
 	parseDate := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02", date)
 		return t
 	}
 
+	// Define test cases
 	tests := []struct {
 		name     string
 		sysTx    types.Transaction
@@ -595,25 +607,33 @@ func TestIsMatch(t *testing.T) {
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Call the isMatch function
 			result := isMatch(tt.sysTx, tt.bankTx)
+
+			// Check if the result matches the expected result
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
+// TestReconcileResult_String tests the String method of ReconcileResult
 func TestReconcileResult_String(t *testing.T) {
+	// Define helper function to parse date and time
 	parseDateTime := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02 15:04:05", date)
 		return t
 	}
 
+	// Define helper function to parse date
 	parseDate := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02", date)
 		return t
 	}
 
+	// Define test cases
 	tests := []struct {
 		name            string
 		reconcileResult ReconcileResult
@@ -676,25 +696,33 @@ func TestReconcileResult_String(t *testing.T) {
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Call the String method
 			result := tt.reconcileResult.String()
+
+			// Check if the result matches the expected result
 			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
 
+// TestReconcileResult_GenerateJSON tests the GenerateJSON method of ReconcileResult
 func TestReconcileResult_GenerateJSON(t *testing.T) {
+	// Define helper function to parse date and time
 	parseDateTime := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02 15:04:05", date)
 		return t
 	}
 
+	// Define helper function to parse date
 	parseDate := func(date string) time.Time {
 		t, _ := time.Parse("2006-01-02", date)
 		return t
 	}
 
+	// Define test cases
 	tests := []struct {
 		name            string
 		reconcileResult ReconcileResult
@@ -784,11 +812,16 @@ func TestReconcileResult_GenerateJSON(t *testing.T) {
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create a temporary file
 			tempFile := filepath.Join(t.TempDir(), "result.json")
+
+			// Call the GenerateJSON method
 			err := tt.reconcileResult.GenerateJSON(tempFile)
 
+			// Check if the result matches the expected result
 			if tt.expectedError {
 				assert.Error(t, err)
 			} else {

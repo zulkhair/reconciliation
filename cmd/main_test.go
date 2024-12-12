@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestProcessBankFiles tests the processBankFiles function
 func TestProcessBankFiles(t *testing.T) {
 	// Create temporary test directory
 	tmpDir, err := os.MkdirTemp("", "test-bank-files")
@@ -23,6 +24,7 @@ func TestProcessBankFiles(t *testing.T) {
 		f.Close()
 	}
 
+	// Define test cases
 	tests := []struct {
 		name    string
 		input   string
@@ -67,9 +69,13 @@ func TestProcessBankFiles(t *testing.T) {
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Call the processBankFiles function
 			got, err := processBankFiles(tt.input)
+
+			// Check if the result matches the expected result
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -80,6 +86,7 @@ func TestProcessBankFiles(t *testing.T) {
 	}
 }
 
+// TestReadSystemTransactions tests the readSystemTransactions function
 func TestReadSystemTransactions(t *testing.T) {
 	// Create a temporary test file
 	tmpFile, err := os.CreateTemp("", "test-system-*.csv")
@@ -107,6 +114,7 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 	assert.NoError(t, err)
 	invalidFile.Close()
 
+	// Define test cases
 	tests := []struct {
 		name      string
 		file      string
@@ -165,25 +173,32 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Parse the start and end dates
 			start, err := time.Parse("2006-01-02", tt.startDate)
 			assert.NoError(t, err)
 
+			// Parse the end date
 			end, err := time.Parse("2006-01-02", tt.endDate)
 			assert.NoError(t, err)
 
+			// Call the readSystemTransactions function
 			transactions, err := readSystemTransactions(tt.file, start, end)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
 			}
+
+			// Check if the result matches the expected result
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantCount, len(transactions))
 		})
 	}
 }
 
+// TestReadBankStatements tests the readBankStatements function
 func TestReadBankStatements(t *testing.T) {
 	// Create temporary test files
 	tmpDir, err := os.MkdirTemp("", "test-bank-statements")
@@ -196,6 +211,7 @@ func TestReadBankStatements(t *testing.T) {
 BS001,-100.0,2024-01-01
 BS002,200.0,2024-01-02`
 
+	// Create and write to test files
 	for _, file := range testFiles {
 		f, err := os.Create(filepath.Join(tmpDir, file))
 		assert.NoError(t, err)
@@ -212,6 +228,7 @@ BS002,200.0,2024-01-02`
 	assert.NoError(t, err)
 	f.Close()
 
+	// Define test cases
 	tests := []struct {
 		name      string
 		files     []string
@@ -262,19 +279,25 @@ BS002,200.0,2024-01-02`
 		},
 	}
 
+	// Run each test case
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Parse the start and end dates
 			start, err := time.Parse("2006-01-02", tt.startDate)
 			assert.NoError(t, err)
 
+			// Parse the end date
 			end, err := time.Parse("2006-01-02", tt.endDate)
 			assert.NoError(t, err)
 
+			// Call the readBankStatements function
 			statements, err := readBankStatements(tt.files, start, end)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
 			}
+
+			// Check if the result matches the expected result
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantCount, len(statements))
 		})

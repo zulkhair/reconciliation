@@ -6,11 +6,13 @@ import (
 	"time"
 )
 
+// CSVReader interface
 type CSVReader interface {
 	ReadSystemTransactionsFromCSV() ([]types.Transaction, error)
 	ReadBankStatementsFromCSV() ([]types.BankStatement, error)
 }
 
+// CSVReaderImpl is the implementation of the CSVReader interface
 type CSVReaderImpl struct {
 	reader *csv.Reader
 

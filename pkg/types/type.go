@@ -11,6 +11,7 @@ const (
 	TransactionTypeCredit TransactionType = "CREDIT"
 )
 
+// Transaction is a transaction from the system
 type Transaction struct {
 	// Unique identifier for the transaction
 	TrxID string
@@ -28,6 +29,7 @@ type Transaction struct {
 	TransactionTime time.Time
 }
 
+// BankStatement is a bank statement
 type BankStatement struct {
 	// Bank name
 	// Assume the name is parsed from file name

@@ -30,11 +30,9 @@ var rootCmd = &cobra.Command{
 		if systemFile == "" {
 			return fmt.Errorf("system transaction file path is required")
 		}
-
 		if bankFile == "" {
 			return fmt.Errorf("at least one bank statement file path is required")
 		}
-
 		if startDate == "" || endDate == "" {
 			return fmt.Errorf("start and end dates are required")
 		}
@@ -44,12 +42,12 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("invalid start date format. Use YYYY-MM-DD")
 		}
-
 		end, err := time.Parse("2006-01-02", endDate)
 		if err != nil {
 			return fmt.Errorf("invalid end date format. Use YYYY-MM-DD")
 		}
 
+		// Validate date range
 		if end.Before(start) {
 			return fmt.Errorf("end date cannot be before start date")
 		}
@@ -188,12 +186,14 @@ func processBankFiles(bankFileString string) ([]string, error) {
 
 // readSystemTransactions reads the system transactions from the given file
 func readSystemTransactions(systemFile string, start, end time.Time) ([]types.Transaction, error) {
+	// Open the system file
 	systemFileHandle, err := os.Open(systemFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open system file: %w", err)
 	}
 	defer systemFileHandle.Close()
 
+	// Create a CSV reader with the system file
 	systemReader := pkgcsv.NewCSVReader(
 		csv.NewReader(systemFileHandle),
 		pkgcsv.WithSkipHeader(true),
@@ -219,9 +219,13 @@ func readBankStatements(bankFiles []string, start, end time.Time) ([]types.BankS
 		err        error
 	}
 
+	// Create a channel to receive results
 	resultCh := make(chan result, len(bankFiles))
 
+	// Create a wait group to wait for all goroutines to complete
 	var wg sync.WaitGroup
+
+	// Process each bank file concurrently
 	for _, bankFile := range bankFiles {
 		wg.Add(1)
 		go func(filename string) {
@@ -234,6 +238,7 @@ func readBankStatements(bankFiles []string, start, end time.Time) ([]types.BankS
 			}
 			defer bankFileHandle.Close()
 
+			// Create a CSV reader with the bank file
 			bankReader := pkgcsv.NewCSVReader(
 				csv.NewReader(bankFileHandle),
 				pkgcsv.WithSkipHeader(true),
@@ -241,12 +246,14 @@ func readBankStatements(bankFiles []string, start, end time.Time) ([]types.BankS
 				pkgcsv.WithFilename(filename),
 			)
 
+			// Read the bank statements
 			statements, err := bankReader.ReadBankStatementsFromCSV()
 			if err != nil {
 				resultCh <- result{nil, fmt.Errorf("failed to read bank statements: %w", err)}
 				return
 			}
 
+			// Send the statements to the result channel
 			resultCh <- result{statements, nil}
 		}(bankFile)
 	}
