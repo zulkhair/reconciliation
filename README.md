@@ -1,6 +1,6 @@
-# Reconciliation App
+# Reconciliation Service
 
-Simple Reconciliation App in Go
+Simple Reconciliation Service in Go
 
 ## Input
 
@@ -11,6 +11,17 @@ Simple Reconciliation App in Go
 ## Output
 
 - JSON file (can be generated using flag --output)
+
+```
+- Total transactions processd => Total count of system transactions
+- Total matched transactions => Total count of transactions that matched with bank statement
+- Total unmatched transactions => Total count of transactions and bank statement that unmatched
+- Total discrepancies => Total sum of discrepancies in amount between matched transactions
+
+Detailed of unmatched transactions:
+- System transactions missing from bank statements => List of transactions that unmatched with bank statement
+- Bank statements missing from system transactions => List of bank statements that unmatched with system transactions
+```
 
 ## Project Structure
 
