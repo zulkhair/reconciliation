@@ -49,6 +49,7 @@ Flags:
   -t, --start string    Start date for reconciliation in YYYY-MM-DD format (required)
   -e, --end string      End date for reconciliation in YYYY-MM-DD format (required)
   -o, --output string   Path to output JSON file
+  -p, --print           Print the result to console
   -h, --help            help for this command
 ```
 
@@ -76,7 +77,8 @@ docker-compose run --rm reconciliation \
   --bank /app/data/multiple/banks \
   --start 2024-01-01 \
   --end 2024-12-31 \
-  --output /app/data/custom-result.json
+  --output /app/data/custom-result.json \
+  --print true
 ```
 
 ## Build
