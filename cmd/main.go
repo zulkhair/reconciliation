@@ -100,10 +100,26 @@ func main() {
 	rootCmd.Flags().StringP("output", "o", "", "Path to output JSON file")
 
 	// Mark required flags
-	rootCmd.MarkFlagRequired("system")
-	rootCmd.MarkFlagRequired("bank")
-	rootCmd.MarkFlagRequired("start")
-	rootCmd.MarkFlagRequired("end")
+	err := rootCmd.MarkFlagRequired("system")
+	if err != nil {
+		fmt.Printf("Error: %s\n\n", err)
+		os.Exit(1)
+	}
+	err = rootCmd.MarkFlagRequired("bank")
+	if err != nil {
+		fmt.Printf("Error: %s\n\n", err)
+		os.Exit(1)
+	}
+	err = rootCmd.MarkFlagRequired("start")
+	if err != nil {
+		fmt.Printf("Error: %s\n\n", err)
+		os.Exit(1)
+	}
+	err = rootCmd.MarkFlagRequired("end")
+	if err != nil {
+		fmt.Printf("Error: %s\n\n", err)
+		os.Exit(1)
+	}
 
 	// Execute the root command
 	if err := rootCmd.Execute(); err != nil {
