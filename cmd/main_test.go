@@ -47,6 +47,24 @@ func TestProcessBankFiles(t *testing.T) {
 			want:    0,
 			wantErr: true,
 		},
+		{
+			name:    "Empty input",
+			input:   "",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "Invalid file path characters",
+			input:   "/invalid/\x00/path",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "Directory without CSV files",
+			input:   os.TempDir(),
+			want:    0,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -76,8 +94,22 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 	assert.NoError(t, err)
 	tmpFile.Close()
 
+	// Create an empty file for testing
+	emptyFile, err := os.CreateTemp("", "empty-*.csv")
+	assert.NoError(t, err)
+	defer os.Remove(emptyFile.Name())
+
+	// Create invalid CSV file
+	invalidFile, err := os.CreateTemp("", "invalid-*.csv")
+	assert.NoError(t, err)
+	defer os.Remove(invalidFile.Name())
+	_, err = invalidFile.WriteString("invalid,csv,format\nwithout,proper,headers")
+	assert.NoError(t, err)
+	invalidFile.Close()
+
 	tests := []struct {
 		name      string
+		file      string
 		startDate string
 		endDate   string
 		wantCount int
@@ -85,6 +117,7 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 	}{
 		{
 			name:      "Valid date range",
+			file:      tmpFile.Name(),
 			startDate: "2024-01-01",
 			endDate:   "2024-01-03",
 			wantCount: 2,
@@ -92,6 +125,7 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 		},
 		{
 			name:      "Partial date range",
+			file:      tmpFile.Name(),
 			startDate: "2024-01-01",
 			endDate:   "2024-01-02",
 			wantCount: 2,
@@ -99,10 +133,35 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 		},
 		{
 			name:      "Invalid date range",
+			file:      tmpFile.Name(),
 			startDate: "2024-01-03",
 			endDate:   "2024-01-01",
 			wantCount: 0,
-			wantErr:   false, // expected false because this already handled in the other function
+			wantErr:   false,
+		},
+		{
+			name:      "Non-existent file",
+			file:      "nonexistent.csv",
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   true,
+		},
+		{
+			name:      "Empty file",
+			file:      emptyFile.Name(),
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   false,
+		},
+		{
+			name:      "Invalid CSV format",
+			file:      invalidFile.Name(),
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   true,
 		},
 	}
 
@@ -114,7 +173,7 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`
 			end, err := time.Parse("2006-01-02", tt.endDate)
 			assert.NoError(t, err)
 
-			transactions, err := readSystemTransactions(tmpFile.Name(), start, end)
+			transactions, err := readSystemTransactions(tt.file, start, end)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -145,6 +204,14 @@ BS002,200.0,2024-01-02`
 		f.Close()
 	}
 
+	// Create invalid CSV file
+	invalidFile := filepath.Join(tmpDir, "invalid.csv")
+	f, err := os.Create(invalidFile)
+	assert.NoError(t, err)
+	_, err = f.WriteString("invalid,csv\nformat,data")
+	assert.NoError(t, err)
+	f.Close()
+
 	tests := []struct {
 		name      string
 		files     []string
@@ -164,6 +231,30 @@ BS002,200.0,2024-01-02`
 		{
 			name:      "Non-existent file",
 			files:     []string{filepath.Join(tmpDir, "nonexistent.csv")},
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   true,
+		},
+		{
+			name:      "Empty file list",
+			files:     []string{},
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   false,
+		},
+		{
+			name:      "Invalid CSV format",
+			files:     []string{invalidFile},
+			startDate: "2024-01-01",
+			endDate:   "2024-01-02",
+			wantCount: 0,
+			wantErr:   true,
+		},
+		{
+			name:      "Mix of valid and invalid files",
+			files:     []string{filepath.Join(tmpDir, "bank1.csv"), invalidFile},
 			startDate: "2024-01-01",
 			endDate:   "2024-01-02",
 			wantCount: 0,
