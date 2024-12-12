@@ -131,21 +131,27 @@ func main() {
 func processBankFiles(bankFileString string) ([]string, error) {
 	// Check if path is a directory
 	fileInfo, err := os.Stat(bankFileString)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get file info: %w", err)
+	if err == nil {
+		// If the bank file is a directory, read all CSV files in the directory
+		if fileInfo.IsDir() {
+			files, err := filepath.Glob(filepath.Join(bankFileString, "*.csv"))
+			if err != nil {
+				return nil, fmt.Errorf("failed to read bank files: %w", err)
+			}
+			return files, nil
+		}
 	}
 
-	// If the bank file is a directory, read all CSV files in the directory
-	if fileInfo.IsDir() {
-		files, err := filepath.Glob(filepath.Join(bankFileString, "*.csv"))
+	// Create separate paths from comma-separated string
+	bankFiles := strings.Split(bankFileString, ",")
+	for _, file := range bankFiles {
+		_, err := os.Stat(file)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read bank files: %w", err)
 		}
-		return files, nil
 	}
 
-	// If the bank file is a comma-separated list, return the list
-	return strings.Split(bankFileString, ","), nil
+	return bankFiles, nil
 }
 
 // readSystemTransactions reads the system transactions from the given file

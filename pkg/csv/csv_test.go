@@ -50,7 +50,7 @@ TX002,200.0,CREDIT,2024-01-02 10:00:00`,
 			},
 		},
 		{
-			name: "valid system transactions with negative amounts",
+			name: "invalid system transactions with negative amounts",
 			csvContent: `TrxID,Amount,Type,TransactionTime
 TX001,-100.0,DEBIT,2024-01-01 10:00:00
 TX002,-200.0,CREDIT,2024-01-02 10:00:00`,
