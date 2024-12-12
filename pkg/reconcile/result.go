@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reconciliation/pkg/types"
+	"strings"
 )
 
 type ReconcileResult struct {
@@ -33,16 +34,16 @@ type ReconcileUnmatched struct {
 }
 
 func (r *ReconcileResult) String() string {
-	result := "Reconciliation Summary:\n"
-	result += "------------------------\n"
-	result += fmt.Sprintf("Total transactions processed: %d\n", r.TransactionProcessed)
-	result += fmt.Sprintf("Total matched transactions: %d\n", r.TransactionMatched)
-	result += fmt.Sprintf("Total unmatched transactions: %d\n", r.TransactionUnmatched.TransactionUnmatched)
+	var result strings.Builder
+	result.WriteString("Reconciliation Summary:\n------------------------\n")
+	fmt.Fprintf(&result, "Total transactions processed: %d\n", r.TransactionProcessed)
+	fmt.Fprintf(&result, "Total matched transactions: %d\n", r.TransactionMatched)
+	fmt.Fprintf(&result, "Total unmatched transactions: %d\n", r.TransactionUnmatched.TransactionUnmatched)
 
 	if len(r.TransactionUnmatched.SystemUnmatched) > 0 {
-		result += "\nSystem transactions missing from bank statements:\n"
+		result.WriteString("\nSystem transactions missing from bank statements:\n")
 		for _, tx := range r.TransactionUnmatched.SystemUnmatched {
-			result += fmt.Sprintf("- TrxID: %s, Amount: %.2f, Date: %s\n",
+			fmt.Fprintf(&result, "- TrxID: %s, Amount: %.2f, Date: %s\n",
 				tx.TrxID,
 				tx.Amount,
 				tx.TransactionTime.Format("2006-01-02 15:04:05"))
@@ -50,17 +51,17 @@ func (r *ReconcileResult) String() string {
 	}
 
 	if len(r.TransactionUnmatched.BankUnmatched) > 0 {
-		result += "\nBank statements missing from system transactions:\n"
-		// Group by bank name
-		bankGroups := make(map[string][]types.BankStatement)
+		result.WriteString("\nBank statements missing from system transactions:\n")
+		// Pre-allocate map with capacity
+		bankGroups := make(map[string][]types.BankStatement, len(r.TransactionUnmatched.BankUnmatched))
 		for _, stmt := range r.TransactionUnmatched.BankUnmatched {
 			bankGroups[stmt.BankName] = append(bankGroups[stmt.BankName], stmt)
 		}
 
 		for bankName, statements := range bankGroups {
-			result += fmt.Sprintf("\nBank: %s\n", bankName)
+			fmt.Fprintf(&result, "\nBank: %s\n", bankName)
 			for _, stmt := range statements {
-				result += fmt.Sprintf("- ID: %s, Amount: %.2f, Date: %s\n",
+				fmt.Fprintf(&result, "- ID: %s, Amount: %.2f, Date: %s\n",
 					stmt.UniqueID,
 					stmt.Amount,
 					stmt.Date.Format("2006-01-02"))
@@ -68,19 +69,14 @@ func (r *ReconcileResult) String() string {
 		}
 	}
 
-	result += fmt.Sprintf("\nTotal amount discrepancies: %.2f\n", r.TotalDiscrepancies)
-	return result
+	fmt.Fprintf(&result, "\nTotal amount discrepancies: %.2f\n", r.TotalDiscrepancies)
+	return result.String()
 }
 
 // GenerateJSON generates a JSON file containing reconciliation results
 func (r *ReconcileResult) GenerateJSON(filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("failed to create JSON file: %w", err)
-	}
-	defer file.Close()
-
-	result := struct {
+	// Define the result structure at package level to avoid recreating it
+	type jsonResult struct {
 		Summary struct {
 			TotalTransactionsProcessed int     `json:"total_transactions_processed"`
 			TotalTransactionsMatched   int     `json:"total_transactions_matched"`
@@ -91,32 +87,27 @@ func (r *ReconcileResult) GenerateJSON(filename string) error {
 			SystemTransactions []types.Transaction              `json:"system_transactions,omitempty"`
 			BankStatements     map[string][]types.BankStatement `json:"bank_statements,omitempty"`
 		} `json:"unmatched_details"`
-	}{
-		Summary: struct {
-			TotalTransactionsProcessed int     `json:"total_transactions_processed"`
-			TotalTransactionsMatched   int     `json:"total_transactions_matched"`
-			TotalTransactionsUnmatched int     `json:"total_transactions_unmatched"`
-			TotalDiscrepancies         float64 `json:"total_discrepancies"`
-		}{
-			TotalTransactionsProcessed: r.TransactionProcessed,
-			TotalTransactionsMatched:   r.TransactionMatched,
-			TotalTransactionsUnmatched: r.TransactionUnmatched.TransactionUnmatched,
-			TotalDiscrepancies:         r.TotalDiscrepancies,
-		},
-		UnmatchedDetails: struct {
-			SystemTransactions []types.Transaction              `json:"system_transactions,omitempty"`
-			BankStatements     map[string][]types.BankStatement `json:"bank_statements,omitempty"`
-		}{
-			SystemTransactions: r.TransactionUnmatched.SystemUnmatched,
-		},
 	}
 
-	// Group bank unmatched by bank name
-	bankGroups := make(map[string][]types.BankStatement)
+	// Pre-allocate map with capacity
+	bankGroups := make(map[string][]types.BankStatement, len(r.TransactionUnmatched.BankUnmatched))
 	for _, stmt := range r.TransactionUnmatched.BankUnmatched {
 		bankGroups[stmt.BankName] = append(bankGroups[stmt.BankName], stmt)
 	}
+
+	result := jsonResult{}
+	result.Summary.TotalTransactionsProcessed = r.TransactionProcessed
+	result.Summary.TotalTransactionsMatched = r.TransactionMatched
+	result.Summary.TotalTransactionsUnmatched = r.TransactionUnmatched.TransactionUnmatched
+	result.Summary.TotalDiscrepancies = r.TotalDiscrepancies
+	result.UnmatchedDetails.SystemTransactions = r.TransactionUnmatched.SystemUnmatched
 	result.UnmatchedDetails.BankStatements = bankGroups
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create JSON file: %w", err)
+	}
+	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")

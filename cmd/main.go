@@ -24,6 +24,7 @@ var rootCmd = &cobra.Command{
 		bankFile, _ := cmd.Flags().GetString("bank")
 		startDate, _ := cmd.Flags().GetString("start")
 		endDate, _ := cmd.Flags().GetString("end")
+		print, _ := cmd.Flags().GetBool("print")
 
 		// Validate required flags
 		if systemFile == "" {
@@ -53,6 +54,9 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("end date cannot be before start date")
 		}
 
+		// Start timer for read CSV
+		startTimer := time.Now()
+
 		// Read system transactions
 		systemTransactions, err := readSystemTransactions(systemFile, start, end)
 		if err != nil {
@@ -69,14 +73,30 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to read bank statements: %w", err)
 		}
 
+		// Stop timer for read CSV
+		endTimer := time.Now()
+		fmt.Printf("Read CSV time: %s\n", endTimer.Sub(startTimer))
+
+		// Start timer for reconcile
+		startTimer = time.Now()
+
 		// Reconcile transactions
 		result := reconcile.Reconcile(systemTransactions, bankStatements)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile transactions: %w", err)
 		}
 
-		// Print reconciled transactions
-		fmt.Println(result.String())
+		// Stop timer for reconcile
+		endTimer = time.Now()
+		fmt.Printf("Reconcile time: %s\n", endTimer.Sub(startTimer))
+
+		// Start timer for generate result
+		startTimer = time.Now()
+
+		if print {
+			// Print reconciled transactions
+			fmt.Println(result.String())
+		}
 
 		// Generate JSON file
 		outputFile, _ := cmd.Flags().GetString("output")
@@ -86,18 +106,26 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		// Stop timer for generate result
+		endTimer = time.Now()
+		fmt.Printf("Generate result time: %s\n", endTimer.Sub(startTimer))
+
 		return nil
 	},
 	SilenceErrors: true,
 }
 
 func main() {
+	// Start timer
+	start := time.Now()
+
 	// Define command line flags
 	rootCmd.Flags().StringP("system", "s", "", "Path to system transaction CSV file (required)")
 	rootCmd.Flags().StringP("bank", "b", "", "Directory path contains bank statement CSV files or Comma-separated paths to bank statement CSV files (required)")
 	rootCmd.Flags().StringP("start", "t", "", "Start date for reconciliation in YYYY-MM-DD format (required)")
 	rootCmd.Flags().StringP("end", "e", "", "End date for reconciliation in YYYY-MM-DD format (required)")
 	rootCmd.Flags().StringP("output", "o", "", "Path to output JSON file")
+	rootCmd.Flags().BoolP("print", "p", false, "Print the result to the console")
 
 	// Mark required flags
 	err := rootCmd.MarkFlagRequired("system")
@@ -125,6 +153,10 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("Error: %s\n\n", err)
 	}
+
+	// Stop timer
+	end := time.Now()
+	fmt.Printf("Total execution time: %s\n", end.Sub(start))
 }
 
 // processBankFiles reads the bank statements from the given files

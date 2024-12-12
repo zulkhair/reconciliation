@@ -87,3 +87,7 @@ make build
 ./bin/reconciliation -s sample/matched/system.csv -b sample/matched/mandiri.csv -t 2024-01-01 -e 2024-01-31 -o output.json
 ```
 
+## Note & Improvement (TODO)
+
+- Tried to process 100.000 system transactions and 100.000 bank statements, it takes 2 minutes to be processed. (still slow)
+- Need to try using database to store the data and use database query to get the data. (maybe faster)

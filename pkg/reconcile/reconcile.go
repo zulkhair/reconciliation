@@ -1,17 +1,21 @@
 package reconcile
 
 import (
+	"math"
 	"reconciliation/pkg/types"
 )
+
+// amountTolerance is the amount of discrepancy allowed
+const amountTolerance = 0.01
 
 func Reconcile(system []types.Transaction, bank []types.BankStatement) ReconcileResult {
 	result := ReconcileResult{
 		TransactionUnmatched: ReconcileUnmatched{},
 	}
 
-	// Track which transactions have been matched
-	matchedSystem := make(map[string]bool)
-	matchedBank := make(map[string]bool)
+	// Pre-allocate maps with expected capacity
+	matchedSystem := make(map[string]bool, len(system))
+	matchedBank := make(map[string]bool, len(bank))
 
 	result.TransactionProcessed = len(system)
 
@@ -31,7 +35,7 @@ func Reconcile(system []types.Transaction, bank []types.BankStatement) Reconcile
 				result.TransactionMatched++
 
 				// Add any amount discrepancy to total
-				result.TotalDiscrepancies += abs(sysTx.Amount - abs(bankTx.Amount))
+				result.TotalDiscrepancies += floor(abs(sysTx.Amount - abs(bankTx.Amount)))
 				break
 			}
 		}
@@ -56,7 +60,6 @@ func Reconcile(system []types.Transaction, bank []types.BankStatement) Reconcile
 // isMatch checks if a system transaction matches a bank transaction
 func isMatch(sysTx types.Transaction, bankTx types.BankStatement) bool {
 	// Match by amount and transaction type
-	amountTolerance := 0.99
 	bankAmount := bankTx.Amount
 
 	// For system DEBIT transactions, bank amount should be negative
@@ -68,12 +71,17 @@ func isMatch(sysTx types.Transaction, bankTx types.BankStatement) bool {
 		return false
 	}
 
-	if abs(sysTx.Amount-abs(bankAmount)) > amountTolerance {
+	if floor(abs(sysTx.Amount-abs(bankAmount))) > amountTolerance {
 		return false
 	}
 
 	// Match by date
 	return sysTx.TransactionTime.Format("2006-01-02") == bankTx.Date.Format("2006-01-02")
+}
+
+// Assumes the value is only to 2 decimal places
+func floor(value float64) float64 {
+	return math.Floor(value*100) / 100
 }
 
 // abs returns the absolute value of a float64

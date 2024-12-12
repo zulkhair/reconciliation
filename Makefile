@@ -20,10 +20,10 @@ build:
 # - output: Path to output JSON file
 run:
 	@if [ -z "$(system)" ] || [ -z "$(bank)" ] || [ -z "$(start)" ] || [ -z "$(end)" ]; then \
-		echo "Usage: make run system=<system-file> bank=<bank-file> start=<start-date> end=<end-date> [output=<output-file>]"; \
+		echo "Usage: make run system=<system-file> bank=<bank-file> start=<start-date> end=<end-date> [output=<output-file>] [print=true]"; \
 		exit 1; \
 	fi
-	go run $(GOFLAGS) cmd/main.go -s $(system) -b $(bank) -t $(start) -e $(end) $(if $(output),-o $(output))
+	go run $(GOFLAGS) cmd/main.go -s $(system) -b $(bank) -t $(start) -e $(end) $(if $(output),-o $(output)) $(if $(print),-p)
 
 # Run tests
 test:

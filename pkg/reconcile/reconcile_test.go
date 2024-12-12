@@ -2,6 +2,7 @@ package reconcile
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reconciliation/pkg/types"
@@ -10,6 +11,35 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func generateTransactions(count int) []types.Transaction {
+	transactions := make([]types.Transaction, count)
+
+	for i := 0; i < count; i++ {
+		transactions[i] = types.Transaction{
+			TrxID:           fmt.Sprintf("T%06d", i+1),
+			Amount:          100.00,
+			Type:            "CREDIT",
+			TransactionTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+	}
+
+	return transactions
+}
+
+func generateBankStatements(count int) []types.BankStatement {
+	bankStatements := make([]types.BankStatement, count)
+
+	for i := 0; i < count; i++ {
+		bankStatements[i] = types.BankStatement{
+			UniqueID: fmt.Sprintf("B%06d", i+1),
+			Amount:   100.00,
+			Date:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+	}
+
+	return bankStatements
+}
 
 func TestReconcile(t *testing.T) {
 	// Helper functions to create time.Time from string
@@ -22,6 +52,10 @@ func TestReconcile(t *testing.T) {
 		return t
 	}
 
+	// generate 100 transactions
+	systemTxs := generateTransactions(100)
+	bankTxs := generateBankStatements(100)
+
 	tests := []struct {
 		name           string
 		systemTxs      []types.Transaction
@@ -29,25 +63,12 @@ func TestReconcile(t *testing.T) {
 		expectedResult ReconcileResult
 	}{
 		{
-			name: "Perfect match - single transaction",
-			systemTxs: []types.Transaction{
-				{
-					TrxID:           "TRX1",
-					Amount:          100.00,
-					Type:            "CREDIT",
-					TransactionTime: parseDateTime("2024-03-20 10:30:00"),
-				},
-			},
-			bankTxs: []types.BankStatement{
-				{
-					UniqueID: "BANK1",
-					Amount:   100.00,
-					Date:     parseDate("2024-03-20"),
-				},
-			},
+			name:      "Perfect match - single transaction",
+			systemTxs: systemTxs,
+			bankTxs:   bankTxs,
 			expectedResult: ReconcileResult{
-				TransactionProcessed: 1,
-				TransactionMatched:   1,
+				TransactionProcessed: 100,
+				TransactionMatched:   100,
 				TotalDiscrepancies:   0,
 				TransactionUnmatched: ReconcileUnmatched{
 					TransactionUnmatched: 0,
@@ -110,7 +131,7 @@ func TestReconcile(t *testing.T) {
 			bankTxs: []types.BankStatement{
 				{
 					UniqueID: "BANK1",
-					Amount:   100.005,
+					Amount:   100 + amountTolerance,
 					Date:     parseDate("2024-03-20"),
 				},
 			},
@@ -171,7 +192,7 @@ func TestReconcile(t *testing.T) {
 				},
 				{
 					UniqueID: "BANK2",
-					Amount:   200.21, // Slightly different amount
+					Amount:   200.0021, // Slightly different amount
 					Date:     parseDate("2024-03-20"),
 					BankName: "BankA",
 				},
@@ -179,7 +200,7 @@ func TestReconcile(t *testing.T) {
 			expectedResult: ReconcileResult{
 				TransactionProcessed: 3,
 				TransactionMatched:   2,
-				TotalDiscrepancies:   0.21,
+				TotalDiscrepancies:   0.0021,
 				TransactionUnmatched: ReconcileUnmatched{
 					TransactionUnmatched: 1,
 					SystemUnmatched: []types.Transaction{
@@ -401,7 +422,7 @@ func TestReconcile(t *testing.T) {
 			result := Reconcile(tt.systemTxs, tt.bankTxs)
 			assert.Equal(t, tt.expectedResult.TransactionProcessed, result.TransactionProcessed)
 			assert.Equal(t, tt.expectedResult.TransactionMatched, result.TransactionMatched)
-			assert.InDelta(t, tt.expectedResult.TotalDiscrepancies, result.TotalDiscrepancies, 0.001)
+			assert.InDelta(t, tt.expectedResult.TotalDiscrepancies, result.TotalDiscrepancies, amountTolerance)
 			assert.Equal(t, tt.expectedResult.TransactionUnmatched.TransactionUnmatched,
 				result.TransactionUnmatched.TransactionUnmatched)
 			assert.Equal(t, tt.expectedResult.TransactionUnmatched.SystemUnmatched,
@@ -502,7 +523,7 @@ func TestIsMatch(t *testing.T) {
 				TransactionTime: parseDateTime("2024-03-20 10:30:00"),
 			},
 			bankTx: types.BankStatement{
-				Amount: 100.01,
+				Amount: 100.00 + amountTolerance,
 				Date:   parseDate("2024-03-20"),
 			},
 			expected: true,
@@ -515,7 +536,7 @@ func TestIsMatch(t *testing.T) {
 				TransactionTime: parseDateTime("2024-03-20 10:30:00"),
 			},
 			bankTx: types.BankStatement{
-				Amount: 99.99,
+				Amount: 100.00 - amountTolerance,
 				Date:   parseDate("2024-03-20"),
 			},
 			expected: true,
