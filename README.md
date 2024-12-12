@@ -2,6 +2,16 @@
 
 Simple Reconciliation App in Go
 
+## Input
+
+- System Transaction CSV file
+- Bank Statement CSV file
+- Date range (start date and end date)
+
+## Output
+
+- JSON file (can be generated using flag --output)
+
 ## Project Structure
 
 ```
@@ -23,22 +33,39 @@ reconciliation/
 
 ```
 Flags:
-  -b, --bank string     Directory path contains bank statement CSV files or Comma-separated paths to bank statement CSV files (required)
-  -e, --end string      End date for reconciliation in YYYY-MM-DD format (required)
-  -h, --help            help for this command
-  -o, --output string   Path to output JSON file
-  -t, --start string    Start date for reconciliation in YYYY-MM-DD format (required)
   -s, --system string   Path to system transaction CSV file (required)
+  -b, --bank string     Directory path contains bank statement CSV files or Comma-separated paths to bank statement CSV files (required)
+  -t, --start string    Start date for reconciliation in YYYY-MM-DD format (required)
+  -e, --end string      End date for reconciliation in YYYY-MM-DD format (required)
+  -o, --output string   Path to output JSON file
+  -h, --help            help for this command
 ```
 
 ### Using go run command
 ```bash
+# Example run using go run command
 go run cmd/main.go -s sample/matched/system.csv -b sample/matched/mandiri.csv -t 2024-01-01 -e 2024-01-31 -o output.json
 ```
 
 ### Using Makefile
 ```bash
+# makefile mask the input arguments
 make run system=sample/matched/system.csv bank=sample/matched/mandiri.csv start=2024-01-01 end=2024-01-31 output=output.json
+```
+
+### Using Docker (if you don't have Go installed)
+
+```bash
+# Run with default arguments specified in docker-compose.yml
+docker-compose up
+
+# Run with custom arguments
+docker-compose run --rm reconciliation \
+  --system /app/data/multiple/system.csv \
+  --bank /app/data/multiple/banks \
+  --start 2024-01-01 \
+  --end 2024-12-31 \
+  --output /app/data/custom-result.json
 ```
 
 ## Build
